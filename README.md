@@ -1,5 +1,5 @@
 # find-similar-colors
-´´´bash
+```bash
 usage: find-similar-pics.py [-h] [-n NUM_MATCHES] [-r] image dir
 
 Find similar images based on color schemes.
@@ -13,4 +13,4 @@ options:
   -n NUM_MATCHES, --num-matches NUM_MATCHES
                         Number of similar images to find.
   -r, --raw             Display only the raw image paths.
-´´´
+```
