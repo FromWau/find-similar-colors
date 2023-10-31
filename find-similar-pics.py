@@ -45,18 +45,18 @@ def find_matching_images(image, dir, num_matches=2):
             for filename in files:
                 if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
                     image_path = os.path.join(root, filename)
-                    futures.append(executor.submit(extract_color_scheme, image_path))
+                    futures.append((image_path, executor.submit(extract_color_scheme, image_path)))
 
-            for future in futures:
-                for root, _, files in os.walk(dir):
-                    for filename in files:
-                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                            image_path = os.path.join(root, filename)
-                            color_scheme = future.result()
-                            similarity = compare_color_schemes(input_color_scheme, color_scheme)
-                            matching_images.append((image_path, similarity))
-           
-    matching_images.sort(key=lambda x: x[1])
+        for image_path, future in futures:
+            color_scheme = future.result()
+            similarity = compare_color_schemes(input_color_scheme, color_scheme)
+            matching_images.append((image_path, similarity))
+
+    matching_images.sort(key=lambda x: x[1])  # Sort by similarity score
+
+    # Filter out the input image from the results
+    matching_images = [(path, similarity) for path, similarity in matching_images if path != image]
+
     matching_images = matching_images[:num_matches]
 
     return matching_images
