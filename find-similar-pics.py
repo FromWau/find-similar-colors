@@ -38,19 +38,24 @@ def find_matching_images(image, dir, num_matches=2):
     input_color_scheme = extract_color_scheme(image)
 
     matching_images = []
-    
+
     with ThreadPoolExecutor() as executor:
         futures = []
-        for filename in os.listdir(dir):
-            if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                image_path = os.path.join(dir, filename)
-                futures.append(executor.submit(extract_color_scheme, image_path))
+        for root, _, files in os.walk(dir):
+            for filename in files:
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    image_path = os.path.join(root, filename)
+                    futures.append(executor.submit(extract_color_scheme, image_path))
 
-        for future, image_path in zip(futures, os.listdir(dir)):
-            color_scheme = future.result()
-            similarity = compare_color_schemes(input_color_scheme, color_scheme)
-            matching_images.append((image_path, similarity))
-
+            for future in futures:
+                for root, _, files in os.walk(dir):
+                    for filename in files:
+                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                            image_path = os.path.join(root, filename)
+                            color_scheme = future.result()
+                            similarity = compare_color_schemes(input_color_scheme, color_scheme)
+                            matching_images.append((image_path, similarity))
+           
     matching_images.sort(key=lambda x: x[1])
     matching_images = matching_images[:num_matches]
 
@@ -61,18 +66,17 @@ def main():
     parser.add_argument("image", help="Path to the input image.")
     parser.add_argument("dir", help="Path to the directory containing images to compare.")
     parser.add_argument("-n", "--num-matches", type=int, default=2, help="Number of similar images to find.")
-    parser.add_argument("-r", "--raw", action="store_true", help="Display only the raw image paths.")
-    
+    parser.add_argument("-s", "--short", action="store_true", help="Display only the image paths.")
+
     args = parser.parse_args()
 
     matches = find_matching_images(args.image, args.dir, args.num_matches)
 
     for i, (image_path, similarity) in enumerate(matches):
-        abs_image_path = os.path.abspath(os.path.join(args.dir, image_path))
-        if args.raw:
+        abs_image_path = os.path.abspath(image_path)
+        if args.short:
             print(abs_image_path)
         else:
-            abs_image_path = os.path.abspath(os.path.join(args.dir, image_path))
             print(f"Match {i + 1} - Similarity: {similarity:.2f}")
             print(f"Image Path: {abs_image_path}")
 
